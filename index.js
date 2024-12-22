@@ -78,11 +78,17 @@ async function run() {
 
         app.get('/allRecommendation', async (req, res) => {
             const id = req.query.id
-            const filter = { _id: new ObjectId() }
-            const result = await recommendationsCollection.find().toArray()
+            const filter = { queryId: id }
+            const result = await recommendationsCollection.find(filter).toArray()
             res.send(result)
         })
 
+
+        app.get('/my-recommendation/:email', async (req, res) => {
+            const email = req.params.email
+            const result = await recommendationsCollection.find({ recommenderEmail: email }).toArray()
+            res.send(result)
+        })
 
 
         await client.db("admin").command({ ping: 1 });
