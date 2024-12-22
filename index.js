@@ -3,6 +3,7 @@ const express = require('express');
 const app = express()
 const port = process.env.PORT || 4545
 const cors = require('cors')
+
 // middleware 
 app.use(cors())
 app.use(express.json())
@@ -28,9 +29,20 @@ async function run() {
         app.get('/', (req, res) => {
             res.send('Hello World!')
         })
+
         app.post('/add-queries', async (req, res) => {
             const body = req.body
             const result = await queriesCollection.insertOne(body)
+            res.send(result)
+        })
+
+        app.get('/my-queries', async (req, res) => {
+            const email = req.query.email;
+            let query = {}
+            if (email) {
+                query = { authorEmail: email }
+            }
+            const result = await queriesCollection.find(query).toArray()
             res.send(result)
         })
 
