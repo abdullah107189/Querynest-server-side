@@ -25,6 +25,7 @@ async function run() {
         await client.connect();
         const database = client.db("queryNestDB");
         const queriesCollection = database.collection("queries");
+        const recommendationsCollection = database.collection("recommendations");
 
         app.get('/', (req, res) => {
             res.send('Hello World!')
@@ -53,6 +54,36 @@ async function run() {
             const result = await queriesCollection.deleteOne(query)
             res.send(result)
         })
+
+        // querie details for api 
+        app.get('/querie-details/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) }
+            const result = await queriesCollection.findOne(query)
+            res.send(result)
+        })
+
+        // recommendations
+        app.post('/add-recommendations', async (req, res) => {
+            const body = req.body;
+            const id = body.queryId
+            const filter = { _id: new ObjectId(id) }
+            const query = {
+                $inc: { recommendationCount: 1 }
+            }
+            const incCount = await queriesCollection.updateOne(filter, query)
+            const result = await recommendationsCollection.insertOne(body)
+            res.send(result)
+        })
+
+        app.get('/allRecommendation', async (req, res) => {
+            const id = req.query.id
+            const filter = { _id: new ObjectId() }
+            const result = await recommendationsCollection.find().toArray()
+            res.send(result)
+        })
+
+
 
         await client.db("admin").command({ ping: 1 });
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
