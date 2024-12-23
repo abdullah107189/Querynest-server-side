@@ -90,6 +90,20 @@ async function run() {
             res.send(result)
         })
 
+        // delete my recommendation 
+        app.delete('/my-recommendation/:id', async (req, res) => {
+            const id = req.params.id;
+            const queryId = req.query.queryId;
+            const filter = { _id: new ObjectId(queryId) }
+            const updateDoc = {
+                $inc: {
+                    recommendationCount: -1
+                }
+            }
+            const decCount = await queriesCollection.updateOne(filter, updateDoc)
+            const result = await recommendationsCollection.deleteOne({ _id: new ObjectId(id) })
+            res.send(result)
+        })
 
         await client.db("admin").command({ ping: 1 });
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
