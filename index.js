@@ -43,10 +43,18 @@ async function run() {
             const result = await queriesCollection.find(query).sort({ uploadDate: -1 }).toArray()
             res.send(result)
         })
-        
+
         app.get('/all-queries', async (req, res) => {
-            const result = await queriesCollection.find().toArray()
-            res.send(result)
+            const limit = parseInt(req.query.limit)
+
+            if (limit) {
+                const result = await queriesCollection.find().limit(limit).sort({ uploadDate: -1 }).toArray()
+                res.send(result)
+            }
+            else {
+                const result = await queriesCollection.find().sort({ uploadDate: -1 }).toArray()
+                res.send(result)
+            }
         })
 
         // delete my queries single data 
