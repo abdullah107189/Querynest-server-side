@@ -39,11 +39,13 @@ async function run() {
 
         app.get('/my-queries', async (req, res) => {
             const email = req.query.email;
-            let query = {}
-            if (email) {
-                query = { authorEmail: email }
-            }
+            let query = { authorEmail: email }
             const result = await queriesCollection.find(query).sort({ uploadDate: -1 }).toArray()
+            res.send(result)
+        })
+        
+        app.get('/all-queries', async (req, res) => {
+            const result = await queriesCollection.find().toArray()
             res.send(result)
         })
 
