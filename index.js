@@ -44,15 +44,25 @@ async function run() {
             res.send(result)
         })
 
+        // limit, search 
         app.get('/all-queries', async (req, res) => {
             const limit = parseInt(req.query.limit)
-
+            const search = req.query.search
             if (limit) {
                 const result = await queriesCollection.find().limit(limit).sort({ uploadDate: -1 }).toArray()
                 res.send(result)
             }
             else {
-                const result = await queriesCollection.find().sort({ uploadDate: -1 }).toArray()
+                let query = {}
+                if (search) {
+                    query = {
+                        product_name: {
+                            $regex: search,
+                            $options: 'i'
+                        }
+                    }
+                }
+                const result = await queriesCollection.find(query).sort({ uploadDate: -1 }).toArray()
                 res.send(result)
             }
         })
