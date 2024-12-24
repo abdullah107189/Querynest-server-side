@@ -3,11 +3,40 @@ const express = require('express');
 const app = express()
 const port = process.env.PORT || 4545
 const cors = require('cors')
+const jwt = require('jsonwebtoken');
+var cookieParser = require('cookie-parser')
 
 // middleware 
-app.use(cors())
+app.use(cors({
+    origin: [
+        "http://localhost:5173",
+    ],
+    credentials: true
+}))
 app.use(express.json())
+app.use(cookieParser())
+const cookieOptions = {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
+};
 
+const verifyToken = (req, res, next) => {
+    const token = req.cookies.token
+    if (!token) {
+        return res.status(401).send({ message: 'Unauthorized Access' })
+    }
+    jwt.verify(token, process.env.SECRET_TOKEN, (err, decoded) => {
+        if (err) {
+            return res.status(401).send({ message: 'Unauthorized Access' })
+        }
+        res.user = decoded
+        next()
+    });
+
+}
+//localhost:5000 and localhost:5173 are treated as same site.  so sameSite value must be strict in development server.  in production sameSite will be none
+// in development server secure will false .  in production secure will be true
 
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.fx40ttv.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
@@ -27,6 +56,22 @@ async function run() {
         const queriesCollection = database.collection("queries");
         const recommendationsCollection = database.collection("recommendations");
 
+        // jwt sing 
+        app.post('/jwt-singIn', async (req, res) => {
+            const user = req.body
+            console.log(user);
+            const token = jwt.sign(user, process.env.SECRET_TOKEN, { expiresIn: '5h' });
+            res
+                .cookie('token', token, cookieOptions)
+                .send({ success: true })
+        })
+
+        app.post("/jwt-logout", async (req, res) => {
+            res
+                .clearCookie("token", { ...cookieOptions, maxAge: 0 })
+                .send({ success: true });
+        });
+
         app.get('/', (req, res) => {
             res.send('Hello World!')
         })
@@ -37,8 +82,13 @@ async function run() {
             res.send(result)
         })
 
-        app.get('/my-queries', async (req, res) => {
+        app.get('/my-queries', verifyToken, async (req, res) => {
             const email = req.query.email;
+            console.log(res.user.email, email);
+            if(email !== res.user.email){
+                return res.status(403).send({ message: 'Forbidden Authorized' })
+            }
+
             let query = { authorEmail: email }
             const result = await queriesCollection.find(query).sort({ uploadDate: -1 }).toArray()
             res.send(result)
