@@ -10,11 +10,14 @@ var cookieParser = require('cookie-parser')
 app.use(cors({
     origin: [
         "http://localhost:5173",
+        "https://querynest-8df96.web.app",
+        "https://querynest-8df96.firebaseapp.com"
     ],
     credentials: true
 }))
 app.use(express.json())
 app.use(cookieParser())
+
 const cookieOptions = {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
@@ -35,8 +38,6 @@ const verifyToken = (req, res, next) => {
     });
 
 }
-//localhost:5000 and localhost:5173 are treated as same site.  so sameSite value must be strict in development server.  in production sameSite will be none
-// in development server secure will false .  in production secure will be true
 
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.fx40ttv.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
@@ -51,7 +52,7 @@ const client = new MongoClient(uri, {
 
 async function run() {
     try {
-        await client.connect();
+        // await client.connect();
         const database = client.db("queryNestDB");
         const queriesCollection = database.collection("queries");
         const recommendationsCollection = database.collection("recommendations");
@@ -59,8 +60,7 @@ async function run() {
         // jwt sing 
         app.post('/jwt-singIn', async (req, res) => {
             const user = req.body
-            console.log(user);
-            const token = jwt.sign(user, process.env.SECRET_TOKEN, { expiresIn: '5h' });
+            const token = jwt.sign(user, process.env.SECRET_TOKEN, { expiresIn: '30d' });
             res
                 .cookie('token', token, cookieOptions)
                 .send({ success: true })
@@ -76,7 +76,7 @@ async function run() {
             res.send('Hello World!')
         })
 
-        app.post('/add-queries', async (req, res) => {
+        app.post('/add-queries', verifyToken, async (req, res) => {
             const body = req.body
             const result = await queriesCollection.insertOne(body)
             res.send(result)
@@ -84,8 +84,7 @@ async function run() {
 
         app.get('/my-queries', verifyToken, async (req, res) => {
             const email = req.query.email;
-            console.log(res.user.email, email);
-            if(email !== res.user.email){
+            if (email !== res.user.email) {
                 return res.status(403).send({ message: 'Forbidden Authorized' })
             }
 
@@ -118,7 +117,7 @@ async function run() {
         })
 
         // delete my queries single data 
-        app.delete('/my-querie/:id', async (req, res) => {
+        app.delete('/my-querie/:id', verifyToken, async (req, res) => {
             const id = req.params.id;
             const query = { _id: new ObjectId(id) }
             const result = await queriesCollection.deleteOne(query)
@@ -126,14 +125,14 @@ async function run() {
         })
 
         // querie details for api 
-        app.get('/querie-details/:id', async (req, res) => {
+        app.get('/querie-details/:id', verifyToken, async (req, res) => {
             const id = req.params.id;
             const query = { _id: new ObjectId(id) }
             const result = await queriesCollection.findOne(query)
             res.send(result)
         })
 
-        app.patch('/query-update/:id', async (req, res) => {
+        app.patch('/query-update/:id', verifyToken, async (req, res) => {
             const id = req.params.id
             const filter = { _id: new ObjectId(id) }
             const body = req.body;
@@ -157,15 +156,8 @@ async function run() {
             res.send(result)
         })
 
-        app.get('/allRecommendation', async (req, res) => {
-            const id = req.query.id
-            const filter = { queryId: id }
-            const result = await recommendationsCollection.find(filter).toArray()
-            res.send(result)
-        })
-
-
-        app.get('/my-recommendation/:email', async (req, res) => {
+        // my recommendations route
+        app.get('/my-recommendation/:email', verifyToken, async (req, res) => {
             const email = req.params.email
             const result = await recommendationsCollection.find({ recommenderEmail: email }).toArray()
             res.send(result)
@@ -186,7 +178,8 @@ async function run() {
             res.send(result)
         })
 
-        app.get('/recommendation-for-me/:email', async (req, res) => {
+        // recommendation for me route 
+        app.get('/recommendation-for-me/:email', verifyToken, async (req, res) => {
             const email = req.params.email;
             const result = await recommendationsCollection.find({ userEmail: email }).toArray()
             res.send(result)
@@ -205,7 +198,7 @@ async function run() {
             res.send(result);
         });
 
-        await client.db("admin").command({ ping: 1 });
+        // await client.db("admin").command({ ping: 1 });
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
     } finally {
         // Ensures that the client will close when you finish/error
