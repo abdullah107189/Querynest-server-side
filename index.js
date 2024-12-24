@@ -83,6 +83,17 @@ async function run() {
             res.send(result)
         })
 
+        app.patch('/query-update/:id', async (req, res) => {
+            const id = req.params.id
+            const filter = { _id: new ObjectId(id) }
+            const body = req.body;
+            const updateDoc = {
+                $set: body
+            }
+            const result = await queriesCollection.updateOne(filter, updateDoc)
+            res.send(result)
+        })
+
         // recommendations
         app.post('/add-recommendations', async (req, res) => {
             const body = req.body;
@@ -130,6 +141,20 @@ async function run() {
             const result = await recommendationsCollection.find({ userEmail: email }).toArray()
             res.send(result)
         })
+
+
+
+        // ---------------------------------------
+
+        app.get('/popular-queries', async (req, res) => {
+            const result = await queriesCollection
+                .find({})
+                .sort({ recommendationCount: -1 })
+                .limit(5)
+                .toArray();
+            res.send(result);
+        });
+
         await client.db("admin").command({ ping: 1 });
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
     } finally {
