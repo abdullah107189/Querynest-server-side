@@ -60,7 +60,7 @@ async function run() {
         // jwt sing 
         app.post('/jwt-singIn', async (req, res) => {
             const user = req.body
-            const token = jwt.sign(user, process.env.SECRET_TOKEN, { expiresIn: '30d' });
+            const token = jwt.sign(user, process.env.SECRET_TOKEN, { expiresIn: '72h' });
             res
                 .cookie('token', token, cookieOptions)
                 .send({ success: true })
