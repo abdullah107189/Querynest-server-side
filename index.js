@@ -156,6 +156,16 @@ async function run() {
             res.send(result)
         })
 
+        app.get('/allRecommendation', async (req, res) => {
+            const id = req.query.id
+            const filter = { _id: new ObjectId() }
+            const result = await recommendationsCollection.find().toArray()
+            const filterQueryId = { queryId: id }
+            const resultFind = await recommendationsCollection.find(filterQueryId).toArray()
+            res.send(resultFind)
+        })
+
+
         // my recommendations route
         app.get('/my-recommendation/:email', verifyToken, async (req, res) => {
             const email = req.params.email
@@ -184,6 +194,8 @@ async function run() {
             const result = await recommendationsCollection.find({ userEmail: email }).toArray()
             res.send(result)
         })
+
+
 
 
 
