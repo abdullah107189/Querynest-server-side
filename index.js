@@ -195,10 +195,6 @@ async function run() {
             res.send(result)
         })
 
-
-
-
-
         // ---------------------------------------
 
         app.get('/popular-queries', async (req, res) => {
