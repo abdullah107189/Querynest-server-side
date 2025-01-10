@@ -93,16 +93,28 @@ async function run() {
             res.send(result)
         })
 
-        // limit, search 
+        // limit, search, sort 
         app.get('/all-queries', async (req, res) => {
             const limit = parseInt(req.query.limit)
             const search = req.query.search
+            const sort = req.query.sort
             if (limit) {
                 const result = await queriesCollection.find().limit(limit).sort({ uploadDate: -1 }).toArray()
                 res.send(result)
             }
             else {
+                let sortSelect = {}
+                if (sort === 'asc') {
+                    sortSelect = { uploadDate: 1 }
+                } else if (sort === 'desc') {
+                    sortSelect = { uploadDate: -1 }
+                }
+                else {
+                    sortSelect
+                }
+
                 let query = {}
+
                 if (search) {
                     query = {
                         product_name: {
@@ -111,7 +123,7 @@ async function run() {
                         }
                     }
                 }
-                const result = await queriesCollection.find(query).sort({ uploadDate: -1 }).toArray()
+                const result = await queriesCollection.find(query).sort(sortSelect).toArray()
                 res.send(result)
             }
         })
