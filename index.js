@@ -110,7 +110,7 @@ async function run() {
                     sortSelect = { uploadDate: -1 }
                 }
                 else {
-                    sortSelect
+                    sortSelect = { uploadDate: -1 }
                 }
 
                 let query = {}
@@ -137,7 +137,7 @@ async function run() {
         })
 
         // querie details for api 
-        app.get('/querie-details/:id', verifyToken, async (req, res) => {
+        app.get('/querie-details/:id', async (req, res) => {
             const id = req.params.id;
             const query = { _id: new ObjectId(id) }
             const result = await queriesCollection.findOne(query)
@@ -156,7 +156,7 @@ async function run() {
         })
 
         // recommendations
-        app.post('/add-recommendations', async (req, res) => {
+        app.post('/add-recommendations', verifyToken, async (req, res) => {
             const body = req.body;
             const id = body.queryId
             const filter = { _id: new ObjectId(id) }
@@ -168,15 +168,13 @@ async function run() {
             res.send(result)
         })
 
-        app.get('/allRecommendation', async (req, res) => {
-            const id = req.query.id
-            const filter = { _id: new ObjectId() }
-            const result = await recommendationsCollection.find().toArray()
+        app.get('/allRecommendation/:id', async (req, res) => {
+            const id = req.params.id
+            console.log(id);
             const filterQueryId = { queryId: id }
             const resultFind = await recommendationsCollection.find(filterQueryId).toArray()
             res.send(resultFind)
         })
-
 
         // my recommendations route
         app.get('/my-recommendation/:email', verifyToken, async (req, res) => {
